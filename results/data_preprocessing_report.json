@@ -1,0 +1,40 @@
+{
+  "status": "VALIDATED_AND_CLEANED",
+  "total_ratings": 100000,
+  "unique_users": 943,
+  "unique_movies": 1682,
+  "sha256_fingerprint": "f3c934c71bd3ef2c6648342141233cac23fe8b8104ebd5aa4f5aafdb0ae676a1",
+  "outlier_analysis": {
+    "user_activity": {
+      "min": 20,
+      "median": 65.0,
+      "mean": 106.04453870625663,
+      "max": 737,
+      "q1": 33.0,
+      "q3": 148.0,
+      "iqr": 115.0,
+      "upper_bound": 320.5,
+      "outlier_count": 42,
+      "outlier_percentage": 4.453870625662779
+    },
+    "item_popularity": {
+      "min": 1,
+      "median": 27.0,
+      "mean": 59.45303210463734,
+      "max": 583,
+      "q1": 6.0,
+      "q3": 80.0,
+      "iqr": 74.0,
+      "upper_bound": 191.0,
+      "outlier_count": 127,
+      "outlier_percentage": 7.5505350772889415
+    },
+    "ratings_breakdown": {
+      "4": 34174,
+      "3": 27145,
+      "5": 21201,
+      "2": 11370,
+      "1": 6110
+    }
+  }
+}
