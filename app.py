@@ -46,12 +46,42 @@ st.set_page_config(
 )
 
 
+def get_cache_signature() -> str:
+    """Generate a cache signature based on file modification times in results/."""
+    files = [
+        RESULTS_DIR / "metrics.csv",
+        RESULTS_DIR / "train.csv",
+        RESULTS_DIR / "test.csv",
+        RESULTS_DIR / "movies.csv",
+        RESULTS_DIR / "top10_recommendations.pkl",
+        RESULTS_DIR / "data_preprocessing_report.json",
+    ]
+    timestamps = [f.stat().st_mtime for f in files if f.exists()]
+    return str(sum(timestamps))
+
+
+def check_raw_data_sync() -> int | None:
+    """Count lines in data/ml-100k/u.data to detect any external manual edits."""
+    u_data = Path("data/ml-100k/u.data")
+    if not u_data.exists():
+        return None
+    try:
+        with open(u_data, "rb") as f:
+            return sum(1 for line in f if line.strip())
+    except Exception:
+        return None
+
+
 # ---------------------------------------------------------------
-# SECTION: Data Loading & Caching (Zero Retraining in UI)
+# SECTION: Data Loading & Caching (Zero Retraining in UI by Default)
 # ---------------------------------------------------------------
 @st.cache_data
-def load_cached_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, dict, dict]:
+def load_cached_data(signature: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, dict, dict]:
     """Load pre-computed benchmark artifacts from the results directory.
+    Cache automatically invalidates whenever result files are modified on disk.
+
+    Args:
+        signature: Unique timestamp-based hash of results folder.
 
     Returns:
         tuple: (metrics_df, train_df, test_df, movies_df, top10_dict, audit_report).
@@ -93,9 +123,11 @@ def main() -> None:
     st.title("Comparing Recommendation Algorithms")
     st.caption("Benchmark of PopularityBaseline, ItemKNN, and SVD on MovieLens 100K (Per-User Temporal Split)")
 
+    signature = get_cache_signature()
+
     # Load artifacts safely with error guidance if results are missing
     try:
-        metrics_df, train_df, test_df, movies_df, top10_recommendations, audit_report = load_cached_data()
+        metrics_df, train_df, test_df, movies_df, top10_recommendations, audit_report = load_cached_data(signature)
     except FileNotFoundError as e:
         st.error(str(e))
         st.info("Execute `python run_experiments.py` in your terminal to generate results.")
@@ -103,6 +135,23 @@ def main() -> None:
 
     movie_title_map = dict(zip(movies_df["item_id"], movies_df["title"]))
     total_df = pd.concat([train_df, test_df], ignore_index=True)
+    results_ratings_count = len(total_df)
+
+    # Check if raw u.data has been manually altered on disk (e.g. examiner deleted a line)
+    raw_lines = check_raw_data_sync()
+    if raw_lines is not None and raw_lines != results_ratings_count:
+        st.warning(
+            f"⚡ **Manual Row Deletion Detected in Raw Dataset!**\n\n"
+            f"File `data/ml-100k/u.data` currently has **{raw_lines:,} rows**, "
+            f"while precomputed results reflect **{results_ratings_count:,} rows**.\n\n"
+            f"Click the button below (or execute `python run_experiments.py` in your terminal) to synchronize the models with your changes."
+        )
+        if st.button("🔄 Sync & Recompute Models with Modified Data", type="primary"):
+            with st.spinner("Retraining models on modified dataset (takes ~2 seconds)..."):
+                import run_experiments
+                run_experiments.main()
+                st.cache_data.clear()
+                st.rerun()
 
     # Exactly 3 tabs as specified in requirements
     tab1, tab2, tab3 = st.tabs(["Data Exploration", "Model Comparison", "User Inspector"])
