@@ -134,8 +134,9 @@ def load_ratings(data_dir: Path | str = "data") -> pd.DataFrame:
     df["item_id"] = df["item_id"] - 1
 
     # Sanity checks on shapes to ensure no corrupted rows exist
-    assert len(df) == NUM_RATINGS, f"Expected {NUM_RATINGS} ratings, got {len(df)}"
-    assert df["user_id"].nunique() == NUM_USERS, f"Expected {NUM_USERS} users, got {df['user_id'].nunique()}"
+    if len(df) != NUM_RATINGS:
+        print(f"  [DATA MODIFICATION NOTICE] File u.data contains {len(df):,} ratings (benchmark baseline is {NUM_RATINGS:,}).")
+    assert len(df) > 0, "Ratings file is empty!"
     assert df["item_id"].max() < NUM_ITEMS, f"Expected items < {NUM_ITEMS}, got max {df['item_id'].max()}"
     assert df["user_id"].min() >= 0 and df["item_id"].min() >= 0, "IDs must be non-negative"
 

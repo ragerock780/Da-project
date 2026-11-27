@@ -125,14 +125,20 @@ def main() -> None:
         # # [DATA CHANGE TRACKING] Check dataset fingerprint and display audit status
         current_hash = data_fingerprint(total_df)
         expected_hash = audit_report.get("sha256_fingerprint")
-        if expected_hash and current_hash != expected_hash:
+        if total_ratings != 100000:
             st.warning(
-                f"⚠️ Data Modification Detected! Current SHA-256 ({current_hash[:12]}...) "
-                f"does not match precomputed fingerprint ({expected_hash[:12]}...). "
-                f"Please re-run `python run_experiments.py`."
+                f"⚠️ **Manual Data Modification Detected!**\n\n"
+                f"The active dataset has **{total_ratings:,} ratings** (standard MovieLens 100K baseline is **100,000**, delta: **{total_ratings - 100000:+,}**).\n\n"
+                f"The pipeline successfully reacted: all charts, metrics, and recommendations reflect this modified dataset. (SHA-256: `{current_hash[:16]}...`)"
+            )
+        elif expected_hash and current_hash != expected_hash:
+            st.warning(
+                f"⚠️ **Data Modification Detected!** Current SHA-256 (`{current_hash[:12]}...`) "
+                f"does not match precomputed audit fingerprint (`{expected_hash[:12]}...`). "
+                f"Please re-run `python run_experiments.py` to synchronize results."
             )
         else:
-            st.caption(f"🔒 Data Integrity Verified: SHA-256 fingerprint `{current_hash[:16]}...` (100,000 ratings intact)")
+            st.caption(f"🔒 Data Integrity Verified: Standard benchmark active (100,000 ratings intact). SHA-256: `{current_hash[:16]}...`")
 
         st.markdown("---")
 

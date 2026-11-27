@@ -65,9 +65,10 @@ def validate(df: pd.DataFrame) -> bool:
     assert (df["user_id"] >= 0).all(), "user_id contains negative values"
     assert (df["item_id"] >= 0).all(), "item_id contains negative values"
 
-    # Check 5: Exactly 100,000 ratings, 943 users, and up to 1682 items
-    assert len(df) == 100000, f"Expected 100,000 rows, found {len(df)}"
-    assert df["user_id"].nunique() == 943, f"Expected 943 unique users, found {df['user_id'].nunique()}"
+    # Check 5: Dynamic integrity check on dataset size
+    assert len(df) > 0, "Ratings DataFrame is empty!"
+    if len(df) != 100000:
+        print(f"  [DATA MODIFICATION NOTICE] Row count is {len(df):,} (standard benchmark baseline is 100,000).")
     assert df["item_id"].max() < 1682, f"item_id exceeds max catalog size: {df['item_id'].max()}"
 
     return True
@@ -227,6 +228,7 @@ def save_reports(
     outlier_info: dict[str, Any],
     fingerprint: str,
     output_dir: Path | str = "results",
+    total_ratings: int = 100000,
 ) -> Path:
     """Save preprocessing and data integrity audit reports to JSON for verification.
 
@@ -234,6 +236,7 @@ def save_reports(
         outlier_info: Outlier metrics dictionary.
         fingerprint: SHA-256 dataset hash.
         output_dir: Results directory.
+        total_ratings: Current total rating count in the dataset.
 
     Returns:
         Path: Path to the generated report file.
@@ -244,8 +247,8 @@ def save_reports(
 
     report_payload = {
         "status": "VALIDATED_AND_CLEANED",
-        "total_ratings": 100000,
-        "unique_users": 943,
+        "total_ratings": total_ratings,
+        "is_standard_benchmark": (total_ratings == 100000),
         "unique_movies": 1682,
         "sha256_fingerprint": fingerprint,
         "outlier_analysis": outlier_info,

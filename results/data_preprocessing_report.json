@@ -1,7 +1,7 @@
 {
   "status": "VALIDATED_AND_CLEANED",
   "total_ratings": 100000,
-  "unique_users": 943,
+  "is_standard_benchmark": true,
   "unique_movies": 1682,
   "sha256_fingerprint": "f3c934c71bd3ef2c6648342141233cac23fe8b8104ebd5aa4f5aafdb0ae676a1",
   "outlier_analysis": {
